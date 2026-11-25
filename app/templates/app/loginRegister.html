@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>BoardNet — Login</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}">
+    <script src="{% static 'js/main.js' %}"></script>
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">BoardNet</div>
+</div>
+
+<div class="auth-container">
+
+    <div class="card auth-box">
+
+        <div class="auth-toggle">
+            <button onclick="showLogin()">Login</button>
+            <button onclick="showRegister()">Register</button>
+        </div>
+
+        <div id="loginForm">
+            <h2>Login</h2>
+
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+
+                <input type="text" name="username" placeholder="Username">
+                <input type="password" name="password" placeholder="Password">
+
+                <button type="submit">Log in</button>
+            </form>
+            <p style="margin-top:15px;">
+                <a href="{% url 'password_reset' %}">
+                    Forgot your password?
+                </a>
+            </p>
+            {% if error %}
+            <p style="color:red;">{{ error }}</p>
+            {% endif %}
+        </div>
+
+        <div id="registerForm" style="display:none;">
+            <h2>Register</h2>
+
+            <form method="post" action="{% url 'register' %}">
+                {% csrf_token %}
+
+                <input type="text" name="username" placeholder="Username">
+                <input type="email" name="email" placeholder="Email">
+                <input type="password" name="password1" placeholder="Password">
+                <input type="password" name="password2" placeholder="Confirm password">
+
+                <label>
+                    <input type="checkbox" name="organizer">
+                    Organizer account
+                </label>
+
+                <button type="submit">Sign up</button>
+            </form>
+            {% if error and active_tab == "register" %}
+                <p style="color:red;">{{ error }}</p>
+            {% endif %}
+
+            {% if message %}
+                <p style="color:green;">{{ message }}</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+<script>
+    const activeTab = "{{ active_tab|default:'login' }}";
+
+    if (activeTab === "register") {
+        showRegister();
+    } else {
+        showLogin();
+    }
+</script>
+</body>
+</html>
+
+

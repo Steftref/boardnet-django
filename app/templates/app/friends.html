@@ -1,0 +1,55 @@
+{% extends 'app/baseUser.html' %}
+
+{% block content %}
+
+
+<div class="container">
+
+    <h1>My friends</h1>
+
+    <div class="card">
+        {% for friend in friends %}
+        <div class="friend-card" onclick="window.location.href='{% url 'otherProfile' user_id=friend.idu_id %}'">
+            <div class="friend-name">{{ friend.idu.idu.username }}</div>
+            <div class="friend-meta">{{ friend.wins }} wins • {{ friend.matches }} matches • Win rate: {{ friend.win_rate }}%</div>
+            <div class="friend-actions">
+                <button class="compare-btn" onclick="toggleCompare(this); event.stopPropagation();">Compare statistics</button>
+                <div class="compare-box">
+                <div class="compare-grid">
+                    <div>
+                        <h4>You</h4>
+                        <p>Wins: {{ my_statistics.wins }}</p>
+                        <p>Matches: {{ my_statistics.matches }}</p>
+                        <p>Win rate: {{ my_statistics.win_rate }}%</p>
+                    </div>
+                    <div>
+                        <h4>{{ friend.idu.idu.username }}</h4>
+                        <p>Wins: {{ friend.wins }}</p>
+                        <p>Matches: {{ friend.matches }}</p>
+                        <p>Win rate: {{ friend.win_rate }}%</p>
+                    </div>
+                </div>
+            </div>
+                <form method="post" action="{% url 'removeFriend' friend_id=friend.idu_id %}"
+                      style="float: right;" onclick="event.stopPropagation();">
+                    {% csrf_token %}
+                    <button type="submit" class="remove-btn">Remove friend</button>
+                </form>
+            </div>
+
+        </div>
+        {% endfor %}
+
+
+
+
+    </div>
+
+</div>
+
+
+
+
+{% endblock %}
+
+

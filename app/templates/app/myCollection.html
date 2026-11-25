@@ -1,0 +1,99 @@
+{% extends 'app/baseUser.html' %}
+
+{% block content %}
+
+<div class="container">
+
+    <h1>My games</h1>
+
+    <div class="card filter-bar">
+        <input type="text" id="searchInput" placeholder="Search games..." onkeyup="filterGames()">
+        <select id="typeFilter" onchange="filterGames()">
+            <option value="all">All types</option>
+            {% for category in all_categories %}
+            <option value="{{ category.name }}">{{ category.name }}</option>
+            {% endfor %}
+        </select>
+        <select id="playersFilter" onchange="filterGames()">
+            <option value="0">Number of players</option>
+            <option value="2">2 players</option>
+            <option value="3">3 players</option>
+            <option value="4">4 players</option>
+            <option value="6">6 players</option>
+        </select>
+        <select id="durationFilter" onchange="filterGames()">
+            <option value="0">Duration</option>
+            <option value="45">Up to 45 min</option>
+            <option value="90">Up to 90 min</option>
+            <option value="120">Up to 120 min</option>
+        </select>
+        <select id="ageFilter" onchange="filterGames()">
+            <option value="0">Age</option>
+            <option value="6">6</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+            <option value="12">12</option>
+            <option value="14">14</option>
+        </select>
+        <select id="ratingFilter" onchange="filterGames()">
+            <option value="0">All ratings</option>
+            <option value="4">4+</option>
+            <option value="4.5">4.5+</option>
+        </select>
+    </div> 
+
+    <div class="games-grid small" id="gamesList">
+        {% for item in my_collection %}
+            <div class="game-card small with-actions clickable"
+                 data-type="{{ item.categories|join:',' }}"
+                 data-url="{% url 'game_details' item.idg.idg %}"
+                 data-minplayers="{{ item.idg.min_players }}"
+                 data-maxplayers="{{ item.idg.max_players }}"
+                 data-minduration="{{ item.idg.duration_min }}"
+                 data-maxduration="{{ item.idg.duration_max }}"
+                 data-age="{{ item.idg.min_age }}"
+                 data-rating="{{ item.rating }}">
+
+                <div class="game-title">{{ item.idg.name }}</div>
+                <div class="game-info">
+                    {{ item.idg.min_players }}-{{ item.idg.max_players }} players • {{ item.idg.duration_min }}-{{ item.idg.duration_max }} min • {{ item.idg.min_age }}+
+                </div>
+
+                <div class="game-bottom">
+                    {% for category in item.categories %}
+                        <span class="game-type type-{{ category|slugify }}">{{ category }}</span>
+                    {% empty %}
+                        <span class="game-type">—</span>
+                    {% endfor %}
+                    <span class="game-tag">{{ item.rating }}</span>
+                </div>
+
+                <div class="game-card-actions">
+                    <form method="post" action="{% url 'removeFromCollection' item.idg.idg %}">
+                        {% csrf_token %}
+                        <button type="submit" class="delete">Remove</button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+            <p>Your collection is empty.</p>
+            {% endfor %}
+
+
+
+    </div>
+
+    <p id="noResults" style="display:none; text-align:center;">No results</p>
+
+</div>
+
+<script>
+    document.querySelectorAll('.game-card.clickable').forEach(card => {
+    card.addEventListener('click', (e) => {
+        if (e.target.closest('button, form, a')) return;
+        window.location.href = card.dataset.url;
+        });
+    });
+
+</script>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'app/baseUser.html' %}
+
+{% block content %}
+
+<div class="container">
+
+    <h1>Notifications</h1>
+
+    <div class="card">
+
+        {% for n in notifications %}
+            <div class="notification-card" data-id="{{ n.idn }}">
+                <div class="notif-content">
+                    <div class="notif-text">{{ n.message }}</div>
+                    <div class="notif-meta">{{ n.date|date:"d.m.Y." }}</div>
+                </div>
+                <span class="notif-close" onclick="markAsRead({{ n.idn }}, this)">&times;</span>
+            </div>
+            {% empty %}
+            <p>You have no notifications.</p>
+        {% endfor %}
+
+        <button id="toggleRead" onclick="toggleReadNotifications()">Show read</button>
+
+
+        <div id="readList" style="display: none; padding-top: 20px;">
+            {% for n in read_notifications %}
+                <div class="notification-card read">
+                    <div class="notif-content">
+                        <div class="notif-text">{{ n.message }}</div>
+                        <div class="notif-meta">{{ n.date|date:"d.m.Y." }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <p>No read notifications.</p>
+            {% endfor %}
+        </div>
+
+
+    </div>
+
+</div>
+
+{% csrf_token %}
+
+<script>
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function markAsRead(id, el) {
+    fetch(`/notifications/read/${id}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Update error.');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const card = el.closest('.notification-card');
+            card.style.transition = 'opacity 0.3s ease';
+            card.style.opacity = '0';
+            setTimeout(() => {
+                    el.remove();
+                    card.classList.add('read');
+                    card.style.opacity = '';
+                    card.style.transition = '';
+                    const list = document.getElementById('readList');
+                    const emptyMessage = list.querySelector('p');
+                    if (emptyMessage) emptyMessage.remove();
+                    list.prepend(card);
+                }, 300);
+            }
+    })
+    .catch(err => console.error(err));
+}
+</script>
+
+
+{% endblock %}
+
+

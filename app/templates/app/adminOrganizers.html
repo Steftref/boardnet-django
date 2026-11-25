@@ -1,0 +1,94 @@
+{% extends 'app/baseAdmin.html' %}
+
+{% block content %}
+<div class="container">
+
+    <div class="hero small">
+        <h1>Organizer management</h1>
+        <p>Deleting organizer profiles from the system</p>
+    </div>
+
+    <h3 id="listSection">Organizer list</h3>
+    <input
+        type="text"
+        id="searchInput"
+        placeholder="Search organizers..."
+        onkeyup="searchOrg()"
+        class="search-box"
+    />
+    <div class="orgs-list">
+
+        {% for org in organizers %}
+            <div class="org-card{% if not org.idu.idu.is_active %} inactive{% endif %}" data-name="{{ org.idu.idu.username }}">
+
+                <div class="org-header">
+                    <h4>{{ org.idu.idu.username }}</h4>
+                </div>
+
+                <div class="org-info">
+                    <p><strong>Description:</strong> {{ org.description|default:"—" }}</p>
+                    <p><strong>Email:</strong> {{ org.idu.idu.email|default:"—" }}</p>
+                </div>
+
+                <div class="org-actions">
+                    {% if org.idu.idu.is_active %}
+                        <button class="delete-btn"
+                                data-id="{{ org.idu.idu.id }}"
+                                onclick="deactivate(this)">Delete</button>
+                    {% else %}
+                        <button class="delete-btn" disabled>Delete</button>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% empty %}
+            <p>There are no registered organizers.</p>
+            {% endfor %}
+
+    </div>
+
+    <p id="noResults" style="display:none; text-align:center;">No results</p>
+</div>
+
+<script>
+
+    function getCookie1(name) {
+        const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+        return v ? v.pop() : '';
+    }
+    function deactivate(btn) {
+        if (!confirm('Deactivate the organizer and cancel all of their tournaments?')) return;
+
+        const id = btn.dataset.id;
+        btn.disabled = true;            // prevent a double click while the request is in progress
+
+        fetch(`/organizers/${id}/deactivate/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie1('csrftoken') }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok) {
+                // leave the button disabled — the account is now inactive
+                const card = btn.closest('.org-card');
+                card.classList.add('inactive');
+            } else {
+                alert('Error: ' + data.error);
+                btn.disabled = false;   // re-enable the button so it can be tried again
+            }
+        })
+        .catch((err) => {
+    console.error('FETCH ERROR:', err);
+    alert('Error communicating with the server.');
+    btn.disabled = false;
+});
+    }
+</script>
+{% endblock %}
+
+
+
+           
+
+
+

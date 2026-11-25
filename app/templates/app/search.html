@@ -1,0 +1,54 @@
+{% extends 'app/baseUser.html' %}
+
+{% block content %}
+
+<div class="container">
+
+    <h1>Players and organizers</h1>
+
+    <div class="card filter-bar">
+        <input type="text" id="searchUser" placeholder="Search users..." onkeyup="filterUsers()">
+        <select id="roleFilter" onchange="filterUsers()">
+            <option value="all">All</option>
+            <option value="player">Players</option>
+            <option value="organizer">Organizers</option>
+        </select>
+    </div>
+
+    <div class="grid" id="userList">
+
+        {% for member in members %}
+        <div class="user-card"
+             data-role="{% if member.type == 'player' %}player{% else %}organizer{% endif %}">
+
+            <h3>{{ member.username }}</h3>
+
+            {% if member.type == 'player' %}
+
+                <p>Player</p>
+                <p>Wins: {{ member.win_count }}</p>
+
+            {% else %}
+
+                <p>Organizer</p>
+                <p>Tournaments: {{ member.tournament_count }}</p>
+
+            {% endif %}
+
+            <button onclick="location.href='{% url 'otherProfile' member.id %}'">
+                Profile
+            </button>
+
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <p id="noResults" style="display:none; text-align:center;">No results</p>
+
+</div>
+
+{% endblock %}
+
+
+

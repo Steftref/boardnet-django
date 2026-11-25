@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>BoardNet</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}">
+
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">BoardNet</div>
+    <div>
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'search' %}">Search</a>
+        <a href="{% url 'games' %}">Games</a>
+        <a href="{% url 'tournament' %}">Tournaments</a>
+        <a href="{% url 'tools' %}">Tools</a>
+        <a href="{% url 'profile' %}">Profile</a>
+    </div>
+</div>
+
+{% block content %}
+{% endblock %}
+ <script src="{% static 'js/main.js' %}"></script>
+<script src="{% static 'js/toolsFunctions.js' %}"></script>
+</body>
+</html>

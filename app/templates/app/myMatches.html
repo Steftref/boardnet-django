@@ -1,0 +1,111 @@
+{% extends 'app/baseUser.html' %}
+
+{% block content %}
+
+{{ games|json_script:"games-data" }}
+<span id="add-url" data-url="{% url 'addMatch' %}"></span>
+{{ friends|json_script:"friends-data" }}
+{{ my_username|json_script:"my-username" }}
+
+<div class="container">
+
+    <h1>My matches</h1>
+
+    <!-- New match -->
+    <button onclick="toggleForm()" class="btn-add">+ Add new match</button>
+
+    <!-- Form for a new match -->
+    <div id="partyForm" class="card" style="display:none;">
+        <h3>New match</h3>
+
+        <label>Match name:</label><br>
+        <input type="text" id="matchName" required >
+        <label>Game:</label><br>
+        <input type="text" id="gameName" placeholder="Enter game name..." autocomplete="off" required >
+        <input type="hidden" id="gameId">
+        <div id="gameDropdown" class="dropdown"></div>
+        <br><br>
+        <label>Choose participants:</label>
+        <input type="text" id="friendSearch" placeholder="Enter name...">
+        <div id="dropdown" class="dropdown"></div>
+
+        <div id="selectedFriends"></div>
+        <br><br>
+        <label>Proposed winner:</label><br>
+        <input type="text" id="winner" placeholder="Enter the winner's name">
+        <br><br>
+        <label>Match date:</label><br>
+        <input type="date" id="date" required ><br><br>
+
+
+        <button onclick="addParty()">Save</button>
+        <p id="errorMsg" style="color:red; display:none;">
+            An error occurred. Please check the entered data.
+        </p>
+    </div>
+
+    <!-- all matches -->
+    <div id="partyList">
+
+        {% for p in matches %}
+
+            {% if p.confirmed_by_all %}
+                 <div class="party-card confirmed">
+                     <div class="party-title">{{ p.name }}</div>
+                     <div class="party-game">{{ p.game }}</div>
+                     <div class="party-info">{{ p.date|date:"d.m.Y" }} • {{ p.player_count }} players</div>
+                     <div class="party-result">Winner: {% if p.winner %}{{ p.winner }}{% else %}no winner{% endif %}</div>
+                     <span class="party-status confirmed">CONFIRMED</span>
+                </div>
+            {% elif p.confirmed_by_me %}
+                <div class="party-card waiting">
+                    <div class="party-title">{{ p.name }}</div>
+                    <div class="party-game">{{ p.game }}</div>
+                    <div class="party-info">{{ p.date|date:"d.m.Y" }} • {{ p.player_count }} players</div>
+                    <div class="party-result">Proposed winner: <b>{% if p.winner %}{{ p.winner }}{% else %}no winner{% endif %}</b></div>
+
+                    <div class="party-players">
+                        {% for player in p.players %}
+                        <div class="player-chip {% if player.confirmed %}ok{% else %}pending{% endif %}">
+                            <span class="dot"></span>{{ player.name }}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <span class="party-status waiting">WAITING FOR OTHERS TO CONFIRM</span>
+                </div>
+            {% else %}
+                <div class="party-card pending">
+                    <div class="party-title">{{ p.name }}</div>
+                    <div class="party-game">{{ p.game }}</div>
+                    <div class="party-info">{{ p.date|date:"d.m.Y" }} • {{ p.player_count }} players</div>
+                    <div class="party-result">Proposed winner: <b>{% if p.winner %}{{ p.winner }}{% else %}No winner{% endif %}</b></div>
+
+                    <div class="party-players">
+                        {% for player in p.players %}
+                        <div class="player-chip {% if player.confirmed %}ok{% else %}pending{% endif %}">
+                            <span class="dot"></span>{{ player.name }}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <span class="party-status pending">PENDING</span>
+
+                    <form method="post" action="{% url 'confirmMatch' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="match_id" value="{{ p.id }}">
+                        <button type="submit">Confirm result</button>
+                    </form>
+                </div>
+                {% endif %}
+
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+
+{% endblock %}
+

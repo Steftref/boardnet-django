@@ -1,0 +1,103 @@
+{% extends 'app/baseUser.html' %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="hero">
+        <h1>BoardNet</h1>
+        <p>Explore the world of board games and conquer the top of the leaderboard!</p>
+        <a href="{% url 'games' %}" class="btn-link-index">Explore games</a>
+    </div>
+
+    <div class="grid">
+
+        <div class="card">
+            <h2>Leaderboard Arena</h2>
+
+            <div class="leaderboard">
+
+                {% for player, wins in leaderboard %}
+                <div class="leader-row
+
+                    {% if player.idu.idu.id == logged_in_id %}first{% endif %}">
+
+                    <span class="medal">
+                        #{{ forloop.counter }}
+                    </span>
+
+                    <span class="name">
+                        {{ player.idu.idu.username }}
+                    </span>
+
+                    <span class="score">
+                        {{ wins }} wins
+                    </span>
+
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+
+
+
+        <div class="card">
+            <h2>Upcoming tournaments</h2>
+
+            <div class="tournament-grid">
+
+            {% for tournament in tournaments %}
+
+            <div class="tournament-featured">
+
+                <div class="t-title">
+                    {{ tournament.name }}
+                </div>
+
+                <div class="t-info">
+                    {{ tournament.date|date:"d.m.Y" }}
+                    •
+                    {{ tournament.game.name }}
+                </div>
+
+                <div class="t-meta">
+                    {{ tournament.occupancy }}/{{ tournament.capacity }} spots
+                </div>
+
+                <div class="t-extra">
+                    <div>
+                        <strong>Entry fee:</strong>
+                        {{ tournament.entry_fee }} RSD
+                    </div>
+
+                    <div>
+                        <strong>Prize:</strong>
+                        {{ tournament.prize }}
+                    </div>
+                </div>
+
+{#                <div class="t-badge open">#}
+{#                    OPEN#}
+{#                </div>#}
+
+            </div>
+
+            {% endfor %}
+
+            </div>
+
+            <div class="btn-bottom">
+                <a href="{% url 'followedTournaments' %}">
+                    <button>See all</button>
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,401 @@
+{% extends 'app/baseOrganizer.html' %}
+{% load static %}
+{% block content %}
+<div class="container">
+
+    <div class="profile-header card">
+
+        {% if organizer.idu.profile_picture %}
+            <img src="{{ organizer.idu.profile_picture.url }}" class="avatar">
+        {% else %}
+            <img src="{% static 'images/placeholder.png' %}" class="avatar">
+        {% endif %}
+
+        <div class="profile-info">
+            <h2>{{ organizer.idu.idu.username }}</h2>
+            <p>{{ organizer.description|default:"No description" }}</p>
+            <button onclick="togglePanel('editProfilePanel')">Edit profile</button>
+        </div>
+
+        <div class="profile-tabs">
+            <a href="{% url 'organizerNotifications' %}">Notifications</a>
+            <a href="{% url 'logout' %}">Log out</a>
+        </div>
+
+    </div>
+    <div id="editProfilePanel" class="collapsible">
+
+        <div class="card">
+            <h3>Profile editing</h3>
+
+            {% if profile_messages %}
+                {% for message in profile_messages %}
+                    <div class="alert {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" action="{% url 'editOrganizerProfile' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <label>Profile picture</label>
+                <input type="file" name="profile_picture">
+
+                <label>Description</label>
+                <textarea name="description">{{ organizer.description|default_if_none:"" }}</textarea>
+
+                <button type="submit">Save changes</button>
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="stat-bar">
+        <div class="stat-item">
+            <div class="stat-number">{{ active_count }}</div>
+            <div class="stat-label">Active tournaments</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ registered_count }}</div>
+            <div class="stat-label">Registered players</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ finished_count }}</div>
+            <div class="stat-label">Played tournaments</div>
+        </div>
+    </div>
+
+    <!-- TOURNAMENTS -->
+    <div class="card">
+        <div class="card-header" onclick="togglePanel('tournamentsPanel')">
+            <h2>My tournaments</h2>
+            <span>▼</span>
+        </div>
+
+        <div id="tournamentsPanel" class="collapsible">
+
+            <div class="tournament-grid">
+{#                {% if messages %}#}
+{#                    <div class="messages">#}
+{#                        {% for message in messages %}#}
+{#                            <div class="alert {{ message.tags }}">#}
+{#                                {{ message }}#}
+{#                            </div>#}
+{#                        {% endfor %}#}
+{#                    </div>#}
+{#                {% endif %}#}
+
+                {% for t in tournaments %}
+                <div class="tournament-card{% if t.messages %} tournament-card--with-message{% endif %}" data-status="{{ t.status }}">
+                    <h2>{{ t.name }}</h2>
+                    <h3>{{ t.organizer.idu.idu.username }}</h3>
+                    <p>{{ t.date|date:"d.m.Y" }}</p>
+                    <p>Game: {{ t.game.name }}</p>
+                    <p>{{ t.registered }}/{{ t.capacity }} players</p>
+
+                    <span class="status {{ t.status }}">
+                        {{ t.status|upper }}
+                    </span>
+                    {% if t.messages %}
+                        <div class="tournament-message">
+                            {% for message in t.messages %}
+                                <div class="alert {{ message.tags }}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+{#                    {% if messages %}#}
+{#                        {% for message in messages %}#}
+{#                           {% with tournament_id=t.idt|stringformat:"s" %}#}
+{#                                {% if "tournament_"|add:tournament_id in message %}#}
+{#                                    <div class="alert {{ message.tags }}">#}
+{#                                        {{ message|cut:"tournament_"|cut:tournament_id }}#}
+{#                                    </div>#}
+{#                                {% endif %}#}
+{#                            {% endwith %}#}
+{#                        {% endfor %}#}
+{#                    {% endif %}#}
+
+                  <div class="organizer-actions">
+                  {% if t.status == 'active' %}
+                        {% if t.updateTournamentBool %}
+                            <button type="button" class="edit" onclick="toggleEdit(this)">
+                                Edit
+                            </button>
+                        {% else %}
+                            <form method="POST" action="{% url 'edit_tournament' t.idt %}">
+                                {% csrf_token %}
+                                <button type="submit" class="edit">Edit</button>
+                            </form>
+                        {% endif %}
+
+                        {% if t.enterResultsBool %}
+                            <button type="button" class="results" onclick="toggleResults(this)">
+                                Enter results
+                            </button>
+                        {% else %}
+                            <form method="POST" action="{% url 'save_results' t.idt %}">
+                                {% csrf_token %}
+                                <button type="submit" class="results">Enter results</button>
+                            </form>
+                        {% endif %}
+                        <form method="POST"
+                              action="{% url 'cancel_tournament' t.idt %}"
+                              onsubmit="return confirm('Are you sure you want to cancel the tournament?');">
+                            {% csrf_token %}
+                            <button type="submit" class="delete">Cancel</button>
+                        </form>
+
+                  {% endif %}
+
+                </div>
+
+                    {% if t.enterResultsBool %}
+                    <div class="results-form">
+                        <h4>Results entry</h4>
+
+                        <form method="POST" action="{% url 'save_results' t.idt %}">
+                            {% csrf_token %}
+                            First place:
+                            <select name="first_place">
+                                <option value="">---no first place---</option>
+                                {% for u in t.participation_set.all %}
+                                    <option value="{{ u.idu.idu.idu.id }}">{{ u.idu.idu.idu.username }}</option>
+                                {% endfor %}
+                            </select>
+                            <br>
+                            Second place:
+                            <select name="second_place">
+                                <option value="">---no second place---</option>
+                                {% for u in t.participation_set.all %}
+                                    <option value="{{ u.idu.idu.idu.id }}">{{ u.idu.idu.idu.username }}</option>
+                                {% endfor %}
+                            </select>
+                            <br>
+                            Third place:
+                            <select name="third_place">
+                                <option value="">---no third place---</option>
+                                {% for u in t.participation_set.all %}
+                                    <option value="{{ u.idu.idu.idu.id }}">{{ u.idu.idu.idu.username }}</option>
+                                {% endfor %}
+                            </select>
+
+                            <button type="submit">Save results</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                    {% if t.updateTournamentBool %}
+                    <div class="edit-form">
+                        <h4>Tournament editing</h4>
+
+                        <form method="POST" action="{% url 'edit_tournament' t.idt %}">
+                            {% csrf_token %}
+
+                            <label>New date</label>
+                            <input type="date" name="date" value="{{ t.date|date:'Y-m-d' }}">
+
+                            <label>New time</label>
+                            <input type="time" name="start_time" value="{{ t.date|time:'H:i' }}">
+
+                            <label>New number of players</label>
+                            <input type="number" name="capacity"  value="{{ t.capacity }}">
+
+                            <button type="submit">Save changes</button>
+                        </form>
+                    </div>
+                {% endif %}
+                </div>
+                {% endfor %}
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- CREATE -->
+    <div class="card">
+        <div class="card-header" onclick="togglePanel('createPanel')">
+            <h2>Create tournament</h2>
+            <span>▼</span>
+        </div>
+
+        <div id="createPanel" class="collapsible">
+            {% if creation_messages %}
+                {% for message in creation_messages %}
+                    <div class="alert {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            <form method="POST" action="{% url 'create_tournament' %}" class="tournament-form">
+            {% csrf_token %}
+
+                <input type="text" name="name" placeholder="Tournament name" value="{{ create_form_data.name|default:'' }}" required>
+
+                <select name="game">
+                    <option value="">---Choose a game---</option>
+                    {% for game in games %}
+                        <option value="{{ game.idg }}" {% if create_form_data.game|stringformat:"s" == game.idg|stringformat:"s" %}selected{% endif %}>{{ game.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <input type="date" name="date"  value="{{ create_form_data.date|default:'' }}">
+                <input type="time" name="start_time"  value="{{ create_form_data.start_time|default:'' }}">
+                <input type="number" name="capacity" placeholder="Max players" value="{{ create_form_data.capacity|default:'' }}">
+                <input type="text" name="location" placeholder="Location" value="{{ create_form_data.location|default:'' }}">
+                <input type="number" step="0.01" name="entry_fee" placeholder="Entry fee (RSD)" value="{{ create_form_data.entry_fee|default:'' }}">
+                <input type="text" name="prize" placeholder="Prize (e.g. 1. place: 5000 RSD)" value="{{ create_form_data.prize|default:'' }}">
+                <textarea name="description" placeholder="Description">{{ create_form_data.description|default:'' }}</textarea>
+
+                <button type="submit">Create</button>
+
+            </form>
+
+        </div>
+    </div>
+
+    <!-- MY GAMES -->
+<div class="card">
+    <div class="card-header" onclick="togglePanel('gamesPanel')">
+        <h2>My games</h2>
+        <span>▼</span>
+    </div>
+
+    <div id="gamesPanel" class="collapsible">
+
+        <!-- FILTERS -->
+        <div class="filter-bar">
+            <input type="text" id="searchInputOrg" placeholder="Search games..." onkeyup="filterGamesOrg()">
+
+            <select id="typeFilterOrg" onchange="filterGamesOrg()">
+                <option value="all">All categories</option>
+                {% for category in all_categories %}
+                    <option value="{{ category.name }}">
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <select id="playersFilterOrg" onchange="filterGamesOrg()">
+                <option value="0">Number of players</option>
+                <option value="2">2 players</option>
+                <option value="3">3 players</option>
+                <option value="4">4 players</option>
+                <option value="6">6 players</option>
+            </select>
+        </div>
+
+        <!-- GRID -->
+        <div class="game-grid" id="gamesListOrg">
+
+            {% for game in games %}
+            <div class="game-card small with-actions"
+
+                 data-type="{{ game.categories|join:',' }}"
+                 data-minplayers="{{ game.min_players }}"
+                 data-maxplayers="{{ game.max_players }}">
+
+                <div class="game-title">
+                    {{ game.name }}
+                </div>
+
+                <div class="game-info">
+                    {{ game.min_players }}-{{ game.max_players }} •
+                    {{ game.duration_min }}{% if game.duration_max %}-{{ game.duration_max }}{% endif %} min
+                </div>
+
+                <div class="game-bottom">
+                    <div class="game-type">
+                        {% for category in game.categories %}
+                            <span class="tag type-{{ category|slugify }}">{{ category }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="game-card-actions">
+                    <form method="POST" action="{% url 'remove_game_from_collection' game.idg %}">
+                        {% csrf_token %}
+                        <button class="delete" type="submit">Remove</button>
+                    </form>
+                </div>
+
+            </div>
+            {% empty %}
+                <br>
+                The game list is empty
+            {% endfor %}
+
+        </div>
+        <p id="noResultsOrg" style="display:none; text-align:center;">
+            No results
+        </p>
+
+    </div>
+</div>
+
+</div>
+
+{% if has_tournament_message %}
+<script>
+    window.addEventListener("load", function () {
+        togglePanel("tournamentsPanel");
+
+        const card = document.querySelector(".tournament-card--with-message");
+
+        if (card) {
+            card.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
+    });
+</script>
+{% endif %}
+{% if has_creation_message %}
+<script>
+    window.addEventListener("load", function () {
+        togglePanel("createPanel");
+        document.getElementById("createPanel").scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+    });
+</script>
+{% endif %}
+
+{% if has_profile_message %}
+<script>
+    window.addEventListener("load", function () {
+        togglePanel("editProfilePanel");
+        document.getElementById("editProfilePanel").scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+    });
+</script>
+{% endif %}
+
+<style>
+    #tournamentsPanel .tournament-card.edit-open {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+
+        background: rgba(252, 244, 212, 0.5) !important;
+        border: 1px solid rgba(101, 67, 33, 0.32) !important;
+    }
+
+    #tournamentsPanel .tournament-card.edit-open .edit-form {
+        display: block !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        opacity: 1 !important;
+        padding: 10px 0 22px !important;
+    }
+
+    #tournamentsPanel .tournament-grid {
+        align-items: start;
+    }
+</style>
+{% endblock %}

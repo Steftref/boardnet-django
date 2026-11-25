@@ -1,0 +1,93 @@
+{% extends 'app/baseUser.html' %}
+
+{% block content %}
+
+<div class="container">
+
+    <h1>My tournaments</h1>
+
+    <div class="card filter-bar">
+        <input type="text" id="searchTournament" placeholder="Search tournaments..." onkeyup="filterTournaments()">
+        <select id="statusFilter" onchange="filterTournaments()">
+            <option value="all">All statuses</option>
+            <option value="open">Registered</option>
+            <option value="finished">Finished</option>
+            <option value="canceled">Canceled</option>
+        </select>
+        <select id="gameFilter" onchange="filterTournaments()">
+            <option value="all">All games</option>
+            {% for game in games %}
+            <option value="{{ game.name }}">{{ game.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <h2>Upcoming</h2>
+
+    <div class="tournament-grid" id="tournamentList">
+         {% for t in upcoming %}
+            <div class="tournament-card" data-status="open" data-game="{{ t.game.name }}">
+                <h2>{{ t.name }}</h2>
+                <h3>{{ t.organizer.idu.idu.username }}</h3>
+                <p>{{ t.date|date:"d.m.Y" }} • {{ t.game.name }}</p>
+                <p>{{ t.occupancy }}/{{ t.capacity }} players</p>
+                {% if t.prize %}
+                <p><strong>Prize:</strong> {{ t.prize }}</p>
+                {% endif %}
+
+                <span class="status open">REGISTERED</span>
+
+                <div class="organizer-actions">
+                    <form method="post" action="{% url 'myTournaments' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="idt" value="{{ t.idt }}">
+                    <button type="submit" class="delete">Unregister</button>
+                </form>
+                </div>
+                {% if message and message_idt == t.idt|stringformat:"s" %}
+                    <p style="text-align:center; color:#a33; font-weight:bold;">{{ message }}</p>
+                    {% endif %}
+            </div>
+        {% empty %}
+        <p>No upcoming tournaments.</p>
+        {% endfor %}
+
+    </div>
+
+    <h2>History</h2>
+
+    <div class="tournament-grid">
+        <div class="tournament-grid">
+
+            {% for t in history %}
+            <div class="tournament-card" data-status="{{ t.status }}" data-game="{{ t.game.name }}">
+                <h2>{{ t.name }}</h2>
+                <h3>{{ t.organizer.idu.idu.username }}</h3>
+                <p>{{ t.date|date:"d.m.Y" }} • {{ t.game.name }}</p>
+                <p>{{ t.occupancy }}/{{ t.capacity }} players</p>
+                <span class="status {{ t.status }}">{{ t.status|upper }}</span>
+                {% if t.my_position %}
+                    <p><b>Placement: {{ t.my_position }}. place</b></p>
+                    {% elif t.status == 'finished' %}
+                    <p><b>Participated</b></p>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p>No finished tournaments.</p>
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    <p id="noResults" style="display:none; text-align:center;">No results</p>
+
+</div>
+
+
+
+{% endblock %}
+
+
+
+

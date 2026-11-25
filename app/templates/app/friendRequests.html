@@ -1,0 +1,37 @@
+{% extends 'app/baseUser.html' %}
+
+{% block content %}
+
+
+<div class="container">
+
+    <h1>Friend requests</h1>
+
+    <div class="card">
+
+        {% for request_obj in friend_requests %}
+        <div class="request-card" onclick="window.location.href='{% url 'otherProfile' user_id=request_obj.idu1.idu.idu_id %}'">
+            <div class="request-name">{{ request_obj.idu1.idu.idu.username }}</div>
+            <div class="request-meta">wants to be your friend</div>
+            <div class="request-actions">
+               <form method="post" action="">
+                    {% csrf_token %}
+                    <input type="hidden" name="sender_id" value="{{ request_obj.idu1.pk }}">
+                    <button class="accept" type="submit" name="action" value="accept">Accept</button>
+                    <button class="reject" type="submit" name="action" value="reject">Reject</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <p class="empty-state">You have no friend requests.</p>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+
+{% endblock %}
+
+

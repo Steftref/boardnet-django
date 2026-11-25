@@ -1,0 +1,225 @@
+{% extends 'app/baseUser.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+
+    <div id="profileHeader" class="profile-header card">
+
+            {% if is_player %}
+                {% if member.profile_picture %}
+                    <img src="{{ member.profile_picture.url }}" class="avatar">
+                {% else %}
+                    <img src="https://i.pravatar.cc/150" class="avatar">
+                {% endif %}
+            {% elif is_organizer %}
+                {% if member.profile_picture %}
+                    <img src="{{ member.profile_picture.url }}" class="avatar">
+                {% else %}
+                    <img src="{% static 'images/placeholder.png' %}" class="avatar">
+                {% endif %}
+            {% endif %}
+
+        <div id="profileCard" class="profile-info">
+            <h2>{{ member.idu.username }}</h2>
+            <p>
+                {% if is_player %}
+                    Player
+                {% elif is_organizer %}
+                    {{ profile_organizer.description|default:"Organizer" }}
+                {% endif %}
+            </p>
+            {% if is_player %}
+            <p>{{ stat.wins }} wins • {{ stat.matches }} matches</p>
+            {% elif is_organizer %}
+                 <p>{{ tournament_count }} organized tournaments</p>
+            {% endif %}
+        </div>
+
+        <div class="profile-actions">
+            {% if not can_interact %}
+            {% elif is_organizer %}
+                <form method="post">
+                    {% csrf_token %}
+                    {% if is_following %}
+                        <button name="action" value="unfollow">Unfollow</button>
+                    {% else %}
+                        <button name="action" value="follow">Follow profile</button>
+                    {% endif %}
+                </form>
+            {% elif is_player %}
+                {% if are_friends %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button name="action" value="remove">Remove friend</button>
+                    </form>
+
+                {% elif request_sent %}
+                    <button class="btn-link" disabled>Request sent</button>
+
+                {% elif request_received %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button name="action" value="accept">Accept</button>
+                        <button name="action" value="reject">Reject</button>
+                    </form>
+
+                {% else %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button name="action" value="add">Add friend</button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </div>
+
+    </div>
+
+    {% if is_organizer %}
+
+        {% if is_following %}
+        <div class="grid">
+
+            <div class="card-prof">
+                <h2>Tournaments</h2>
+
+                {% for t in organizer_tournaments %}
+                    <div class="tournament-card">
+                        <h2>{{ t.name }}</h2>
+                        <h3>{{ member.idu.username }}</h3>
+                        <p>{{ t.date|date:"d.m.Y" }} • {{ t.game.name }}</p>
+                        <p>{{ t.occupancy }}/{{ t.capacity }} players</p>
+
+                        {% if t.prize %}
+                            <p><strong>Prize:</strong> {{ t.prize }}</p>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p>No tournaments created.</p>
+                {% endfor %}
+            </div>
+
+            <div class="card-prof">
+                <h2>Collection</h2>
+                <ul>
+                    {% for item in collection %}
+                        <li>{{ item.idg.name }}</li>
+                    {% empty %}
+                        <li>No items in the collection.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+        {% else %}
+        <div class="card-prof">
+            <p>Follow this organizer to see their tournaments and collection.</p>
+        </div>
+        {% endif %}
+
+    {% elif is_player %}
+
+        {% if are_friends %}
+        <div class="grid">
+
+            <div class="card-prof">
+                <h2>Wishlist</h2>
+                <ul>
+                    {% for item in wishlist %}
+                        <li>{{ item.idg.name }}</li>
+                    {% empty %}
+                        <li>No items in the wishlist.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="card-prof">
+                <h2>Collection</h2>
+                <ul>
+                    {% for item in collection %}
+                        <li>{{ item.idg.name }}</li>
+                    {% empty %}
+                        <li>No items in the collection.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="card-prof">
+                <h2>Tournaments</h2>
+                <ul>
+                    {% for t in tournaments %}
+                        <li>{{ t.idt.name }} — {{ t.position }}. place</li>
+                    {% empty %}
+                        <li>No played tournaments.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+        <div class="card big-stats">
+            <h2>Advanced statistics</h2>
+
+            <div class="stats-grid">
+
+                <div class="stats-box">
+                    <canvas id="resultChart"></canvas>
+                </div>
+
+                <div class="stats-info">
+                    <p>Wins: <b>{{ detailed_stats.wins }}</b></p>
+                    <p>Losses: <b>{{ detailed_stats.losses }}</b></p>
+                    <p>Draws: <b>{{ detailed_stats.draws }}</b></p>
+                    <hr>
+                    <p>Win rate: <b>{{ detailed_stats.win_rate }}%</b></p>
+                    <p>Longest streak: <b>{{ detailed_stats.streak }} win</b></p>
+                    <p>Most played game: <b>{{ detailed_stats.most_played }}</b></p>
+                    <p>Total matches: <b>{{ detailed_stats.total }}</b></p>
+                </div>
+
+                <div class="stats-box">
+                    <canvas id="typeChart"></canvas>
+                </div>
+
+            </div>
+        </div>
+        {% else %}
+        <div class="card-prof">
+            <p>Add this player as a friend to see their collection, wishlist and tournaments.</p>
+        </div>
+        {% endif %}
+
+    {% endif %}
+
+</div>
+
+    
+{% if is_player and are_friends %}
+{{ detailed_stats.category_names|json_script:"category-names" }}
+{{ detailed_stats.category_counts|json_script:"category-counts" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+new Chart(document.getElementById('resultChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Wins', 'Losses', 'Draws'],
+        datasets: [{
+            data: [{{ detailed_stats.wins }}, {{ detailed_stats.losses }}, {{ detailed_stats.draws }}],
+            backgroundColor: ['#2ecc71', '#e74c3c', '#95a5a6']
+        }]
+    }
+});
+
+new Chart(document.getElementById('typeChart'), {
+    type: 'pie',
+    data: {
+        labels: JSON.parse(document.getElementById("category-names").textContent),
+        datasets: [{
+            data: JSON.parse(document.getElementById("category-counts").textContent),
+            backgroundColor: ['#3498db', '#9b59b6', '#f1c40f', '#1abc9c', '#e67e22', '#34495e']
+        }]
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

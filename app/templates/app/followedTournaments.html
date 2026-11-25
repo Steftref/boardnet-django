@@ -1,0 +1,151 @@
+{% extends 'app/baseUser.html' %}
+
+{% block content %}
+
+
+<div class="container">
+
+    <h1>Upcoming tournaments</h1>
+
+    <div class="card filter-bar">
+        <input type="text" id="searchTournament" placeholder="Search tournaments..." onkeyup="filterTournaments()">
+{#        <select id="statusFilter" onchange="filterTournaments()">#}
+{#            <option value="all">All statuses</option>#}
+{#            {% for status in statuses %}#}
+{#                <option value="{{ status }}">{{ status|capfirst }}</option>#}
+{#            {% endfor %}#}
+{#        </select>#}
+        <select id="gameFilter" onchange="filterTournaments()">
+            <option value="all">All games</option>
+            {% for game in games %}
+                <option value="{{ game }}">{{ game }}</option>
+            {% endfor %}
+
+        </select>
+        <select id="locationFilter" onchange="filterTournaments()">
+            <option value="all">All locations</option>
+            {% for location in locations %}
+                <option value="{{ location }}">{{ location }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="tournament-grid">
+
+        {% for t in tournaments %}
+        <div class="tournament-card"
+             data-status="{{ t.status }}"
+             data-game="{{ t.game.name }}"
+             data-location="{{ t.location }}">
+{#             data-organizer="{{ t.organizer.idu.idu.username }}">#}
+
+            <h2>{{ t.name }}</h2>
+            <h3>{{ t.organizer.idu.idu.username }}</h3>
+
+            <p>{{ t.date|date:"d.m.Y" }} • {{ t.game.name }}</p>
+            <p>{{ t.location }}</p>
+            <p>{{ t.occupancy }}/{{ t.capacity }} players</p>
+
+            <div class="tournament-meta">
+                <p><strong>Entry fee:</strong> {{ t.entry_fee }} RSD</p>
+                <p><strong>Prize:</strong> {{ t.prize }}</p>
+            </div>
+
+            <span class="status {{ t.status }}">
+                {{ t.status|upper }}
+            </span>
+
+            {% if t.idt in registrations %}
+                <button disabled style="background: #4CAF50; color: white;">
+                    Registered ✔
+                </button>
+
+{#            {% elif t.occupancy < t.capacity %}#}
+            {% elif t.is_open %}
+                <button onclick="openApplyForm(this)">Apply</button>
+            {% else %}
+                <button disabled>Apply</button>
+            {% endif %}
+
+            {% if t.idt not in registrations %}
+            <div class="apply-form">
+                <h4>Registration</h4>
+
+                <form onsubmit="event.preventDefault(); submitApplyForm(this);">
+
+                    {% csrf_token %}
+
+                    <input type="hidden" name="tournament_id" value="{{ t.idt }}">
+
+                    <input type="text" name="phone" placeholder="Phone" required>
+
+                    <input type="text" name="card" placeholder="Card number" required>
+
+                    <button type="submit">Confirm</button>
+
+                    <p class="form-message"></p>
+
+                </form>
+{#                {% if t.is_open %}#}
+{#                <form method="POST">#}
+{#                    {% csrf_token %}#}
+{#                    <input type="hidden" name="tournament_id" value="{{ t.idt }}">#}
+{##}
+{#                    <input type="text" name="phone" placeholder="Phone" required>#}
+{#                    <input type="text" name="card" placeholder="Card number" required>#}
+{##}
+{#                    <button type="submit">Confirm</button>#}
+{#                </form>#}
+{#                {% endif %}#}
+            </div>
+            {% endif %}
+
+        </div>
+        {% empty %}
+            <p>There are no upcoming tournaments from the organizers you follow.</p>
+        {% endfor %}
+    </div>
+
+    <p id="noResults" style="display:none; text-align:center;">No results</p>
+
+</div>
+<script>
+function submitApplyForm(form) {
+
+    const formData = new FormData(form);
+
+    fetch(window.location.href, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": form.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        let msg = form.querySelector(".form-message");
+
+        msg.innerText = data.message;
+
+         if (data.success) {
+            msg.style.color = "green";
+            setTimeout(() => location.reload(), 400);
+        } else {
+            msg.style.color = "red";
+        }
+
+
+    })
+    .catch(error => {
+        console.log(error);
+
+        let msg = form.querySelector(".form-message");
+        msg.innerText = "Error communicating with the server.";
+        msg.style.color = "red";
+    });
+}
+</script>
+{% endblock %}
+
+

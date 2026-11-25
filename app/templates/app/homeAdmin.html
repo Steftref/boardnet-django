@@ -1,0 +1,124 @@
+{% extends 'app/baseAdmin.html' %}
+
+{% block content %}
+<div class="container">
+
+    <div class="hero">
+        <h1>Admin panel</h1>
+        <p>Request overview, organizer, game and tournament management</p>
+        <a href="{% url 'logout' %}"  class="btn-link-index">Log out</a>
+    </div>
+
+    <div class="stat-bar">
+        <div class="stat-item">
+            <div class="stat-number">{{ request_count }}</div>
+            <div class="stat-label">Requests awaiting approval</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ user_count }}</div>
+            <div class="stat-label">Registered users</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ active_tournament_count }}</div>
+            <div class="stat-label">Active tournaments</div>
+        </div>
+    </div>
+
+    <div class="grid">
+
+        <div class="card" id="members">
+            <h2>Organizer approval</h2>
+
+            {% for request_obj in organizer_requests %}
+            <div class="request-card">
+                <div class="request-name">
+                    {{ request_obj.idu.idu.idu.username }}
+                </div>
+
+                <div class="request-meta">
+                    {{ request_obj.idu.idu.idu.email }}
+                </div>
+
+                <div class="request-meta">
+                    Request submitted:
+                    {{ request_obj.request_date|date:"d.m.Y" }}
+                </div>
+
+                <div class="request-actions">
+                    <form method="post" action="{% url 'approve_request' request_obj.idr %}">
+                        {% csrf_token %}
+                        <button class="accept">Approve</button>
+                    </form>
+
+                    <form method="post" action="{% url 'reject_request' request_obj.idr %}">
+                        {% csrf_token %}
+                        <input type="text" name="reason" placeholder="Rejection reason">
+                        <button class="reject">Reject</button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+            <p>No pending requests</p>
+            {% endfor %}
+        </div>
+
+        <div class="card" id="tournaments">
+            <h2>Tournament management</h2>
+            <h3 style="margin-bottom: 10px;">Tournament search</h3>
+            <div class="card filter-bar">
+                <input type="text" id="searchTournament" placeholder="Search tournaments..." onkeyup="filterTournaments()">
+
+                <select id="statusFilter" onchange="filterTournaments()">
+                    <option value="all">All statuses</option>
+                    {% for status in statuses %}
+                        <option value="{{ status }}">
+                            {{ status|capfirst }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="tournament-grid">
+
+                {% for tournament in tournaments %}
+                <div class="tournament-card"  data-status="{{ tournament.status }}" data-game="{{ tournament.game.name }}" data-location="{{ tournament.location }}">
+                    <h2>{{ tournament.name }}</h2>
+                    <h3>{{ tournament.organizer.idu.idu.username }}</h3>
+
+                    <p>{{ tournament.date|date:"d.m.Y" }}
+                        •
+                        {{ tournament.game.name }}
+                    </p>
+
+                    <p>{{ tournament.occupancy }}/{{ tournament.capacity }} players</p>
+
+                    <span class="status {{ tournament.status }}">
+                        {{ tournament.status|upper }}
+                    </span>
+
+                    {% if tournament.status == 'active' %}
+                        <div class="organizer-actions">
+                            <form method="post" action="{% url 'cancel_tournament_admin' tournament.idt %}">
+                                {% csrf_token %}
+                                <button class="delete">Cancel</button>
+                            </form>
+                        </div>
+                    {% endif %}
+
+                </div>
+                {% empty %}
+                <p>No tournaments to display</p>
+                {% endfor %}
+
+            </div>
+
+            <p id="noResults" style="display:none; text-align:center;">No results</p>
+
+         </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+
+

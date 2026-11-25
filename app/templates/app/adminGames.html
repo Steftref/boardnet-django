@@ -1,0 +1,180 @@
+{% extends 'app/baseAdmin.html' %}
+
+{% block content %}
+<div class="container">
+
+    <div class="hero small">
+    <h1>Game management</h1>
+    <p>Adding and editing games in the system</p>
+
+
+<div class="stat-bar actions">
+
+    <div class="stat-item clickable" onclick="newGame()">
+
+        <div class="stat-label">Add new game</div>
+    </div>
+
+    <div class="stat-item clickable" onclick="scrollToList()">
+
+        <div class="stat-label">Game list</div>
+    </div>
+
+</div>
+
+
+
+</div>
+
+
+    <div id="formSection" class="card" id="games">
+        <h2 >Game management</h2>
+
+        <div class="grid">
+
+            <div>
+                <h3 style="margin-bottom:12px;">Add / edit game</h3>
+                <form id="gameForm" class="tournament-form" method="post" action="" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" id="game_id" name="game_id" value="{{ form_data.game_id|default:'' }}">
+                        {% if errors %}
+                            <div class="form-errors">
+                                {% for g in errors %}
+                                <p>{{ g }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                    <div class="form-group">
+                        <label>Game name</label>
+                        <input id="name" name="name" type="text" maxlength="100" placeholder="e.g. Catan" value="{{ form_data.name|default:'' }}" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Number of players</label>
+                            <div class="range-input">
+                                <input id="min_players" name="min_players" type="number" min="1" placeholder="min" value="{{ form_data.min_players|default:'' }}" required>
+                                <span class="range-sep">–</span>
+                                <input id="max_players" name="max_players" type="number" min="1" placeholder="max" value="{{ form_data.max_players|default:'' }}" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Duration (min)</label>
+                             <div class="range-input">
+                                <input id="duration_min" name="duration_min" type="number" min="1" placeholder="min" value="{{ form_data.duration_min|default:'' }}" required>
+                                <span class="range-sep">–</span>
+                                <input id="duration_max" name="duration_max" type="number" min="1" placeholder="max" value="{{ form_data.duration_max|default:'' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Age</label>
+                            <div id = "inputAge"><input id="min_age" name="min_age" type="number" min="1" placeholder="e.g. 10" value="{{ form_data.min_age|default:'' }}" required><p>+</p></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="category"
+                                    onchange="addCategory(this.value, this.options[this.selectedIndex].text)">
+                                <option value="">Choose</option>
+                                {% for category in all_categories %}
+                                <option value="{{ category.idc }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+
+
+                                <div id="selectedCategories" class="selected-categories"></div>
+
+
+                                <select id="categoriesHidden" name="categories" multiple style="display:none;"></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Author</label>
+                        <input  id="author" name="author" type="text" maxlength="100" placeholder="Author's name" value="{{ form_data.author|default:'' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea placeholder="Short game description..." id="description" name="description">{{ form_data.description|default:'' }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Game image</label>
+                        <input type="file" id="image" name="image" accept="image/*" onchange="previewImage(event)">
+                    </div>
+
+                    <img id="preview" style="margin-top:10px; max-width:200px; display:none;" />
+
+                    <button type="submit" class="create-btn">Save game</button>
+                </form>
+
+                <hr style="margin:30px 0;">
+
+                <h3 id="listSection">Game list</h3>
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search games..."
+                    onkeyup="searchGames()"
+                    class="search-box"
+                />
+                <div class="games-list">
+
+                    {% for game in games %}
+                    <div class="game-card-adm" data-name="{{ game.name }}">
+                        <div class="game-info">
+                            <h4>{{ game.name }}</h4>
+                            <p><strong>Number of players:</strong> {{ game.min_players }}-{{ game.max_players }}</p>
+                            <p><strong>Duration:</strong> {{ game.duration_min }}-{{ game.duration_max }} min</p>
+                            <p><strong>Age:</strong> {{ game.min_age }}+</p>
+                            <p><strong>Author:</strong> {{ game.author|default_if_none:"—" }}</p>
+                            <p><strong>Categories:</strong> {{ game.category_display|default:"—" }}</p>
+
+                            <button class="edit-btn"
+                                    data-game-id="{{ game.idg }}"
+                                    data-name="{{ game.name }}"
+                                    data-min-players="{{ game.min_players }}"
+                                    data-max-players="{{ game.max_players }}"
+                                    data-duration-min="{{ game.duration_min }}"
+                                    data-duration-max="{{ game.duration_max }}"
+                                    data-min-age="{{ game.min_age }}"
+                                    data-author="{{ game.author|default_if_none:'' }}"
+                                    data-description="{{ game.description|default_if_none:'' }}"
+                                    data-category-ids="{{ game.category_ids }}"
+                                    data-category-names="{{ game.category_names }}"
+                                    onclick="editGame(this)">
+                                    Edit
+                            </button>
+                        </div>
+                        {% if game.game_image %}
+                            <img class="game-image-adm" src="{{ game.game_image }}" alt="{{ game.name }}">
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                </div>
+                <p id="noResults" style="display:none; text-align:center;">No results</p>
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+</div>
+
+{% if form_data.category_ids %}
+<span id="enteredCategories" data-ids="{{ form_data.category_ids }}" data-names="{{ form_data.category_names }}"></span>
+<script>
+    // after a validation error the chosen categories stay selected
+    const entered = document.getElementById("enteredCategories").dataset;
+    loadCategories(entered.ids, entered.names);
+</script>
+{% endif %}
+
+{% endblock %}
+
+
+

@@ -1,0 +1,15 @@
+# secrets
+boardnet/local_settings.py
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# local files
+.idea/
+.vscode/
+.DS_Store
+
+media/
+db.sqlite3
